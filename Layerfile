@@ -36,7 +36,12 @@ COPY / .
 
 RUN REPEATABLE bash fast-git-clone.sh dalizard/todo-api.git /backend origin/master && \
     ( pkill --full --exact "node /usr/share/yarn/bin/yarn.js start --host 0.0.0.0" || true; ) && \
-    ( yarn install && PORT=3001 BACKEND_API_ENDPOINT=https://$EXPOSE_WEBSITE_URL/api nohup yarn start --host 0.0.0.0& sleep 2; ) && \
+    if [ "$BRANCH" = staging ]; then \
+      export BACKEND_API_ENDPOINT=https://prod-staging.example.com/api; \
+    else \
+      export BACKEND_API_ENDPOINT=https://$EXPOSE_WEBSITE_URL/api; \
+    fi
+    ( yarn install && PORT=3001 nohup yarn start --host 0.0.0.0& sleep 2; ) && \
     cd /backend && \
     ( docker rm -f $(docker ps -aq) || true; ) && \
     docker run -d -p 4793:4793 redis:latest && \
