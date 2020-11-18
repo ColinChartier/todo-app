@@ -16,14 +16,44 @@ RUN curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
     libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev \
     libcurl4-openssl-dev software-properties-common libffi-dev
 
+RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+ENV PATH=$HOME/.rbenv/bin:$PATH
+RUN echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+
+RUN git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+RUN echo 'export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"' >> ~/.bashrc
+
+RUN rbenv install 2.7.1
+ENV PATH=$HOME/.rbenv/versions/2.7.1/bin:$PATH
+ENV RAILS_ENV=production
+ENV RAILS_MASTER_KEY=e99e4be8f41d43aea8d9ff4b1a5a4d83
+RUN gem install bundler
 
 MEMORY 2G
 ENV NODE_OPTIONS=--max-old-space-size=8192
 
 COPY / .
 
-RUN REPEATABLE yarn install
+RUN REPEATABLE curl https://gist.githubusercontent.com/ColinChartier/6bff7cf77adf7d2a8d7d699a5deed707/raw/0b89b3037548ce7e4fb24bea96628014da1bbf05/download | bash -s dalizard/todo-api.git /backend master && \
+    ( pkill --full --exact "node /usr/share/yarn/bin/yarn.js start --host 0.0.0.0" || true; ) && \
+    ( yarn install && PORT=3001 BACKEND_API_ENDPOINT=https://$EXPOSE_WEBSITE_URL/api nohup yarn start --host 0.0.0.0& sleep 2; ) && \
+    cd /backend && \
+    ( docker rm -f $(docker ps -aq) || true; ) && \
+    docker run -d -p 4793:4793 redis:latest && \
+    docker run --name postgres -e POSTGRES_USER=shogun -e POSTGRES_PASSWORD=password -e POSTGRES_DB=todo-api -e POSTGRES_INITDB_ARGS="-A md5" -p 5432 -d postgres:12 && \
+    sed -i '/postgres/d' /etc/hosts && \
+    echo $(docker inspect --format='{{.NetworkSettings.IPAddress}}' postgres) postgres >> /etc/hosts && \
+    echo -e 'production:\n\
+  adapter: postgresql\n\
+  host: postgres\n\
+  encoder: unicode\n\
+  database: todo-api\n\
+  username: shogun\n\
+  password: password\n' > config/database.yml && \
+    bundle install && \
+    bundle exec rake db:setup db:migrate db:seed
 
 RUN BACKGROUND yarn start --env=production
 
-EXPOSE WEBSITE localhost:3000
+EXPOSE WEBSITE localhost:3000 /api
+EXPOSE WEBSITE localhost:3001
