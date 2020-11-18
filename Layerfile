@@ -12,7 +12,7 @@ RUN curl -fSsL https://deb.nodesource.com/setup_12.x | bash && \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
     apt-get update && \
     apt-get install nodejs yarn \
-    git-core zlib1g-dev build-essential libssl-dev \
+    git-core zlib1g-dev build-essential libssl-dev libpq-dev \
     libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev \
     libcurl4-openssl-dev software-properties-common libffi-dev
 
