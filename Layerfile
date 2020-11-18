@@ -51,9 +51,9 @@ RUN REPEATABLE bash fast-git-clone.sh dalizard/todo-api.git /backend origin/mast
   username: shogun\n\
   password: password\n' > config/database.yml && \
     bundle install && \
-    bundle exec rake db:setup db:migrate db:seed
+    bundle exec rake db:setup db:migrate db:seed && \
+    ( bundle exec rails server --binding 0.0.0.0& sleep 2; )
 
-RUN BACKGROUND yarn start --env=production
 
-EXPOSE WEBSITE localhost:3000 /api
 EXPOSE WEBSITE localhost:3001
+EXPOSE WEBSITE localhost:3000 /api
