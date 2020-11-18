@@ -40,7 +40,7 @@ RUN REPEATABLE bash fast-git-clone.sh dalizard/todo-api.git /backend origin/mast
       export BACKEND_API_ENDPOINT=https://prod-staging.example.com/api; \
     else \
       export BACKEND_API_ENDPOINT=https://$EXPOSE_WEBSITE_URL/api; \
-    fi
+    fi && \
     ( yarn install && PORT=3001 nohup yarn start --host 0.0.0.0& sleep 2; ) && \
     cd /backend && \
     ( docker rm -f $(docker ps -aq) || true; ) && \
